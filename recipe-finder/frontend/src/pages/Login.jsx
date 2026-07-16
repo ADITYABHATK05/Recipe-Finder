@@ -12,9 +12,9 @@ const Login = () => {
 
   useEffect(() => {
     if (isAuthenticated) {
-      navigate(user?.role === "admin" ? "/app/admin" : "/app", { replace: true });
+      navigate("/app", { replace: true });
     }
-  }, [isAuthenticated, user, navigate]);
+  }, [isAuthenticated, navigate]);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -23,7 +23,7 @@ const Login = () => {
 
     try {
       const user = await loginWithEmail(form);
-      navigate(user.role === "admin" ? "/app/admin" : "/app", { replace: true });
+      navigate("/app", { replace: true });
     } catch (loginError) {
       setError(loginError.response?.data?.message || "Login failed. Please try again.");
     } finally {
@@ -82,7 +82,7 @@ const Login = () => {
               onSuccess={async (credentialResponse) => {
                 try {
                   const user = await loginWithGoogle(credentialResponse.credential);
-                  navigate(user.role === "admin" ? "/app/admin" : "/app", { replace: true });
+                  navigate("/app", { replace: true });
                 } catch (googleError) {
                   setError(googleError.response?.data?.message || "Google sign-in failed.");
                 }

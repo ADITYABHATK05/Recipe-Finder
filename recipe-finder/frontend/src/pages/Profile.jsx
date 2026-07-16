@@ -2,14 +2,57 @@ import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import api from "../api";
 
+const COUNTRIES = [
+  "Afghanistan", "Albania", "Algeria", "Andorra", "Angola", "Antigua and Barbuda", "Argentina", "Armenia", "Australia", "Austria",
+  "Azerbaijan", "Bahamas", "Bahrain", "Bangladesh", "Barbados", "Belarus", "Belgium", "Belize", "Benin", "Bhutan",
+  "Bolivia", "Bosnia and Herzegovina", "Botswana", "Brazil", "Brunei", "Bulgaria", "Burkina Faso", "Burundi", "Cabo Verde", "Cambodia",
+  "Cameroon", "Canada", "Central African Republic", "Chad", "Chile", "China", "Colombia", "Comoros", "Congo", "Costa Rica",
+  "Croatia", "Cuba", "Cyprus", "Czechia", "Denmark", "Djibouti", "Dominica", "Dominican Republic", "Ecuador", "Egypt",
+  "El Salvador", "Equatorial Guinea", "Eritrea", "Estonia", "Eswatini", "Ethiopia", "Fiji", "Finland", "France", "Gabon",
+  "Gambia", "Georgia", "Germany", "Ghana", "Greece", "Grenada", "Guatemala", "Guinea", "Guinea-Bissau", "Guyana",
+  "Haiti", "Honduras", "Hungary", "Iceland", "India", "Indonesia", "Iran", "Iraq", "Ireland", "Israel",
+  "Italy", "Jamaica", "Japan", "Jordan", "Kazakhstan", "Kenya", "Kiribati", "Korea, North", "Korea, South", "Kosovo",
+  "Kuwait", "Kyrgyzstan", "Laos", "Latvia", "Lebanon", "Lesotho", "Liberia", "Libya", "Liechtenstein", "Lithuania",
+  "Luxembourg", "Madagascar", "Malawi", "Malaysia", "Maldives", "Mali", "Malta", "Marshall Islands", "Mauritania", "Mauritius",
+  "Mexico", "Micronesia", "Moldova", "Monaco", "Mongolia", "Montenegro", "Morocco", "Mozambique", "Myanmar", "Namibia",
+  "Nauru", "Nepal", "Netherlands", "New Zealand", "Nicaragua", "Niger", "Nigeria", "North Macedonia", "Norway", "Oman",
+  "Pakistan", "Palau", "Palestine", "Panama", "Papua New Guinea", "Paraguay", "Peru", "Philippines", "Poland", "Portugal",
+  "Qatar", "Romania", "Russia", "Rwanda", "Saint Kitts and Nevis", "Saint Lucia", "Saint Vincent and the Grenadines", "Samoa", "San Marino", "Sao Tome and Principe",
+  "Saudi Arabia", "Senegal", "Serbia", "Seychelles", "Sierra Leone", "Singapore", "Slovakia", "Slovenia", "Solomon Islands", "Somalia",
+  "South Africa", "South Sudan", "Spain", "Sri Lanka", "Sudan", "Suriname", "Sweden", "Switzerland", "Syria", "Taiwan",
+  "Tajikistan", "Tanzania", "Thailand", "Timor-Leste", "Togo", "Tonga", "Trinidad and Tobago", "Tunisia", "Turkey", "Turkmenistan",
+  "Tuvalu", "Uganda", "Ukraine", "United Arab Emirates", "United Kingdom", "United States", "Uruguay", "Uzbekistan", "Vanuatu", "Vatican City",
+  "Venezuela", "Vietnam", "Yemen", "Zambia", "Zimbabwe"
+];
+
 const Profile = () => {
   const { user, updateUser } = useAuth();
+
+  const getInitialDob = (age) => {
+    if (!age) return "";
+    const year = new Date().getFullYear() - Number(age);
+    return `${year}-01-01`;
+  };
+
+  const calculateAge = (birthDateString) => {
+    if (!birthDateString) return "";
+    const today = new Date();
+    const birthDate = new Date(birthDateString);
+    let calculatedAge = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      calculatedAge--;
+    }
+    return calculatedAge < 0 ? 0 : calculatedAge;
+  };
+
   const [form, setForm] = useState({
     fullname: user?.fullname || "",
     age: user?.age || "",
     country: user?.country || "",
     sex: user?.sex || "",
   });
+  const [dob, setDob] = useState(getInitialDob(user?.age));
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -19,12 +62,18 @@ const Profile = () => {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
+  const handleDobChange = (value) => {
+    setDob(value);
+    const calculatedAge = calculateAge(value);
+    handleChange("age", calculatedAge);
+  };
+
   const handleSave = async (e) => {
     e.preventDefault();
     setError("");
     setSuccess("");
 
-    if (form.age !== "" && (isNaN(form.age) || Number(form.age) <= 0)) {
+    if (form.age !== "" && (isNaN(form.age) || Number(form.age) < 0)) {
       setError("Please enter a valid age.");
       return;
     }
@@ -88,7 +137,7 @@ const Profile = () => {
               value={form.fullname}
               onChange={(e) => handleChange("fullname", e.target.value)}
               disabled={!editing}
-              placeholder="e.g. Aditya Bhat"
+              placeholder=""
               required={editing}
               style={{ background: editing ? "var(--surface)" : "#fafafa", cursor: editing ? "text" : "not-allowed" }}
             />
@@ -96,15 +145,15 @@ const Profile = () => {
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
             <div className="form-group">
-              <label>Age</label>
+              <label>Date of Birth</label>
               <input
                 className="form-input"
-                type="number"
-                value={form.age}
-                onChange={(e) => handleChange("age", e.target.value)}
+                type="date"
+                value={dob}
+                onChange={(e) => handleDobChange(e.target.value)}
                 disabled={!editing}
-                placeholder="e.g. 25"
-                style={{ background: editing ? "var(--surface)" : "#fafafa", cursor: editing ? "text" : "not-allowed" }}
+                max={new Date().toISOString().split("T")[0]}
+                style={{ background: editing ? "var(--surface)" : "#fafafa", cursor: editing ? "pointer" : "not-allowed" }}
               />
             </div>
 
@@ -125,17 +174,36 @@ const Profile = () => {
             </div>
           </div>
 
-          <div className="form-group">
-            <label>Country</label>
-            <input
-              className="form-input"
-              type="text"
-              value={form.country}
-              onChange={(e) => handleChange("country", e.target.value)}
-              disabled={!editing}
-              placeholder="e.g. India"
-              style={{ background: editing ? "var(--surface)" : "#fafafa", cursor: editing ? "text" : "not-allowed" }}
-            />
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+            <div className="form-group">
+              <label>Age</label>
+              <input
+                className="form-input"
+                type="text"
+                value={form.age}
+                disabled
+                placeholder=""
+                style={{ background: "#fafafa", cursor: "not-allowed" }}
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Country</label>
+              <select
+                className="category-select"
+                value={form.country}
+                onChange={(e) => handleChange("country", e.target.value)}
+                disabled={!editing}
+                style={{ background: editing ? "var(--surface)" : "#fafafa", cursor: editing ? "pointer" : "not-allowed" }}
+              >
+                <option value="">Select Country</option>
+                {COUNTRIES.map((cty) => (
+                  <option key={cty} value={cty}>
+                    {cty}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
           <div style={{ marginTop: "30px", display: "flex", gap: "12px", justifyContent: "flex-end" }}>
@@ -160,6 +228,7 @@ const Profile = () => {
                       country: user?.country || "",
                       sex: user?.sex || "",
                     });
+                    setDob(getInitialDob(user?.age));
                     setEditing(false);
                     setError("");
                   }}

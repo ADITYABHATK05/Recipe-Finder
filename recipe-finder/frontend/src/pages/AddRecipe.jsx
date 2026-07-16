@@ -3,7 +3,22 @@ import { useNavigate } from "react-router-dom";
 import api from "../api";
 
 const CATEGORIES = ["Breakfast", "Lunch", "Dinner", "Snacks", "Dessert", "Beverages"];
-const CUISINES_LIST = ["Indian", "Italian", "Mexican", "Asian", "American", "French"];
+
+const CUISINES_LIST = [
+  "Indian",
+  "Italian",
+  "Mexican",
+  "Asian",
+  "Japanese",
+  "Chinese",
+  "French",
+  "Greek",
+  "Spanish",
+  "Thai",
+  "Middle Eastern",
+  "American",
+  "Caribbean"
+];
 
 const AddRecipe = () => {
   const navigate = useNavigate();
