@@ -26,7 +26,21 @@ const COUNTRIES = [
 ];
 
 const Profile = () => {
-  const { user, updateUser } = useAuth();
+  const { user, updateUser, logout } = useAuth();
+
+  const handleDeleteAccount = async () => {
+    const confirmed = window.confirm(
+      "Are you sure you want to delete your account? This action is permanent and will completely remove your data."
+    );
+    if (!confirmed) return;
+
+    try {
+      await api.delete("/auth/delete-account");
+      logout();
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to delete account.");
+    }
+  };
 
   const getInitialDob = (age) => {
     if (!age) return "";
@@ -57,6 +71,22 @@ const Profile = () => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [previewImage, setPreviewImage] = useState(user?.picture || "");
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) {
+        setError("Image size must be less than 2MB.");
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPreviewImage(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleChange = (field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -85,6 +115,7 @@ const Profile = () => {
         age: form.age === "" ? null : Number(form.age),
         country: form.country.trim(),
         sex: form.sex,
+        picture: previewImage,
       });
 
       updateUser(response.data.user);
@@ -101,28 +132,86 @@ const Profile = () => {
     <div className="container">
       <div className="form-page glass-card" style={{ maxWidth: "600px", margin: "40px auto", padding: "32px", borderRadius: "24px" }}>
         <div style={{ textAlign: "center", marginBottom: "30px" }}>
-          <div style={{
-            width: "80px",
-            height: "80px",
-            borderRadius: "50%",
-            background: "linear-gradient(135deg, var(--accent), #f97316)",
-            color: "#fff",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontSize: "2rem",
-            fontWeight: "bold",
-            margin: "0 auto 12px",
-            textTransform: "uppercase",
-            boxShadow: "0 8px 24px rgba(193, 68, 14, 0.2)"
-          }}>
-            {user?.name ? user.name[0] : "U"}
-          </div>
+          {previewImage ? (
+            <img 
+              src={previewImage} 
+              alt="Profile Avatar"
+              style={{
+                width: "80px",
+                height: "80px",
+                borderRadius: "50%",
+                objectFit: "cover",
+                margin: "0 auto 12px",
+                display: "block",
+                boxShadow: "0 8px 24px rgba(0, 0, 0, 0.08)",
+                border: "2px solid var(--accent)"
+              }}
+            />
+          ) : (
+            <div style={{
+              width: "80px",
+              height: "80px",
+              borderRadius: "50%",
+              background: "linear-gradient(135deg, var(--accent), #f97316)",
+              color: "#fff",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: "2rem",
+              fontWeight: "bold",
+              margin: "0 auto 12px",
+              textTransform: "uppercase",
+              boxShadow: "0 8px 24px rgba(193, 68, 14, 0.2)"
+            }}>
+              {user?.name ? user.name[0] : "U"}
+            </div>
+          )}
+          
+          {editing && (
+            <div style={{ marginTop: "8px", marginBottom: "16px", display: "flex", gap: "8px", justifyContent: "center" }}>
+              <label style={{
+                cursor: "pointer",
+                color: "var(--accent)",
+                fontSize: "0.82rem",
+                fontWeight: 700,
+                background: "rgba(193, 68, 14, 0.06)",
+                border: "1px dashed rgba(193, 68, 14, 0.3)",
+                padding: "6px 14px",
+                borderRadius: "8px",
+                display: "inline-block"
+              }}>
+                Upload Photo
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageChange}
+                  style={{ display: "none" }}
+                />
+              </label>
+              {previewImage && (
+                <button
+                  type="button"
+                  onClick={() => setPreviewImage("")}
+                  style={{
+                    cursor: "pointer",
+                    color: "#dc2626",
+                    fontSize: "0.82rem",
+                    fontWeight: 700,
+                    background: "rgba(220, 38, 38, 0.06)",
+                    border: "1px dashed rgba(220, 38, 38, 0.3)",
+                    padding: "6px 14px",
+                    borderRadius: "8px",
+                    display: "inline-block"
+                  }}
+                >
+                  Remove Photo
+                </button>
+              )}
+            </div>
+          )}
+
           <h1 style={{ margin: "0 0 4px", fontSize: "1.8rem" }}>{user?.name || "User Profile"}</h1>
           <p style={{ margin: 0, color: "var(--muted)", fontSize: "0.95rem" }}>{user?.email}</p>
-          <span className="status-pill status-pill-positive" style={{ marginTop: "12px" }}>
-            Role: {user?.role || "customer"}
-          </span>
         </div>
 
         {error && <p className="form-error" style={{ textAlign: "center", marginBottom: "16px" }}>{error}</p>}
@@ -206,18 +295,39 @@ const Profile = () => {
             </div>
           </div>
 
-          <div style={{ marginTop: "30px", display: "flex", gap: "12px", justifyContent: "flex-end" }}>
+          <div style={{ marginTop: "30px", display: "flex", flexDirection: "column", gap: "12px" }}>
             {!editing ? (
-              <button
-                type="button"
-                className="btn btn-primary"
-                onClick={() => setEditing(true)}
-                style={{ width: "100%" }}
-              >
-                Edit Profile
-              </button>
-            ) : (
               <>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={() => setEditing(true)}
+                  style={{ width: "100%" }}
+                >
+                  Edit Profile
+                </button>
+                {user?.role !== "admin" && (
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={handleDeleteAccount}
+                    style={{ 
+                      width: "100%", 
+                      background: "rgba(220, 38, 38, 0.08)", 
+                      color: "#dc2626", 
+                      border: "1px solid rgba(220, 38, 38, 0.15)",
+                      padding: "12px",
+                      borderRadius: "12px",
+                      cursor: "pointer",
+                      fontWeight: 700
+                    }}
+                  >
+                    Delete Account
+                  </button>
+                )}
+              </>
+            ) : (
+              <div style={{ display: "flex", gap: "12px", justifyContent: "flex-end", width: "100%" }}>
                 <button
                   type="button"
                   className="btn btn-secondary"
@@ -229,6 +339,7 @@ const Profile = () => {
                       sex: user?.sex || "",
                     });
                     setDob(getInitialDob(user?.age));
+                    setPreviewImage(user?.picture || "");
                     setEditing(false);
                     setError("");
                   }}
@@ -243,7 +354,7 @@ const Profile = () => {
                 >
                   {saving ? "Saving..." : "Save Changes"}
                 </button>
-              </>
+              </div>
             )}
           </div>
         </form>

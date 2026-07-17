@@ -1,12 +1,18 @@
 const User = require("../models/User");
+const OtpVerification = require("../models/OtpVerification");
 const {
   hashPassword,
   verifyPassword,
   createToken: signToken,
   decodeJwtPayload,
 } = require("../utils/authUtils");
+const { sendLoginEmail, sendOtpEmail } = require("../utils/emailService");
 
 const JWT_SECRET = process.env.JWT_SECRET || "recipe-finder-development-secret";
+
+const generateOtp = () => {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+};
 
 const getAdminEmails = () =>
   (process.env.ADMIN_EMAILS || "")
@@ -56,15 +62,21 @@ const emailLogin = async (req, res) => {
 
     if (!user) {
       const passwordHash = hashPassword(password);
-      user = await User.create({
-        email: normalizedEmail,
-        name: name?.trim() || normalizedEmail.split("@")[0],
-        passwordHash,
-        authProviders: ["local"],
-        role: getRoleForEmail(normalizedEmail),
-      });
+      const otp = generateOtp();
+      const userName = name?.trim() || normalizedEmail.split("@")[0];
 
-      return res.status(200).json(buildAuthResponse(user));
+      await OtpVerification.findOneAndUpdate(
+        { email: normalizedEmail },
+        {
+          otp,
+          name: userName,
+          passwordHash,
+        },
+        { upsert: true, new: true }
+      );
+
+      sendOtpEmail(normalizedEmail, userName, otp);
+      return res.status(200).json({ otpSent: true, email: normalizedEmail });
     }
 
     if (!user.passwordHash) {
@@ -73,6 +85,7 @@ const emailLogin = async (req, res) => {
         user.authProviders.push("local");
       }
       await user.save();
+      sendLoginEmail(user.email, user.name);
       return res.status(200).json(buildAuthResponse(user));
     }
 
@@ -81,6 +94,7 @@ const emailLogin = async (req, res) => {
       return res.status(401).json({ message: "Invalid email or password" });
     }
 
+    sendLoginEmail(user.email, user.name);
     return res.status(200).json(buildAuthResponse(user));
   } catch (error) {
     return res.status(500).json({ message: "Server error", error: error.message });
@@ -102,9 +116,11 @@ const googleLogin = async (req, res) => {
       return res.status(400).json({ message: "Google account email is missing" });
     }
 
+    let isFirstTime = false;
     let user = await User.findOne({ email });
 
     if (!user) {
+      isFirstTime = true;
       user = await User.create({
         email,
         name: payload?.name || email.split("@")[0],
@@ -121,6 +137,7 @@ const googleLogin = async (req, res) => {
       await user.save();
     }
 
+    sendLoginEmail(user.email, user.name, isFirstTime);
     return res.status(200).json(buildAuthResponse(user));
   } catch (error) {
     return res.status(401).json({ message: "Google login failed", error: error.message });
@@ -155,7 +172,7 @@ const me = async (req, res) => {
 
 const updateProfile = async (req, res) => {
   try {
-    const { fullname, age, country, sex } = req.body;
+    const { fullname, age, country, sex, picture } = req.body;
     const user = await User.findById(req.user.id);
     if (!user) {
       return res.status(404).json({ message: "User not found" });
@@ -166,6 +183,9 @@ const updateProfile = async (req, res) => {
     user.age = age !== undefined ? (age === "" ? null : Number(age)) : user.age;
     user.country = country !== undefined ? country.trim() : user.country;
     user.sex = sex !== undefined ? sex : user.sex;
+    if (picture !== undefined) {
+      user.picture = picture;
+    }
 
     await user.save();
     return res.status(200).json({
@@ -187,9 +207,67 @@ const updateProfile = async (req, res) => {
   }
 };
 
+const verifyOtp = async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+    if (!email || !otp) {
+      return res.status(400).json({ message: "Email and OTP are required" });
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+    const verification = await OtpVerification.findOne({ email: normalizedEmail });
+
+    if (!verification) {
+      return res.status(400).json({ message: "OTP expired or invalid. Please try signing up again." });
+    }
+
+    if (verification.otp !== otp.trim()) {
+      return res.status(400).json({ message: "Invalid OTP code. Please try again." });
+    }
+
+    // OTP verified! Create user.
+    const user = await User.create({
+      email: normalizedEmail,
+      name: verification.name,
+      passwordHash: verification.passwordHash,
+      authProviders: ["local"],
+      role: getRoleForEmail(normalizedEmail),
+    });
+
+    // Delete verification record
+    await OtpVerification.deleteOne({ _id: verification._id });
+
+    // Send first-time welcome email
+    sendLoginEmail(user.email, user.name, true);
+
+    return res.status(200).json(buildAuthResponse(user));
+  } catch (error) {
+    return res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+const deleteAccount = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    if (user.role === "admin") {
+      return res.status(403).json({ message: "Administrators cannot delete their accounts" });
+    }
+
+    await User.deleteOne({ _id: user._id });
+    return res.status(200).json({ message: "Account deleted successfully" });
+  } catch (error) {
+    return res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
 module.exports = {
   emailLogin,
   googleLogin,
   me,
   updateProfile,
+  verifyOtp,
+  deleteAccount,
 };

@@ -31,8 +31,17 @@ export const AuthProvider = ({ children }) => {
     setAuth({ token: "", user: null });
   };
 
-  const loginWithEmail = async ({ email, password }) => {
-    const response = await api.post("/auth/login", { email, password });
+  const loginWithEmail = async ({ email, password, name }) => {
+    const response = await api.post("/auth/login", { email, password, name });
+    if (response.data.otpSent) {
+      return response.data;
+    }
+    persistAuth(response.data);
+    return response.data.user;
+  };
+
+  const verifyOtp = async (email, otp) => {
+    const response = await api.post("/auth/verify-otp", { email, otp });
     persistAuth(response.data);
     return response.data.user;
   };
@@ -55,6 +64,7 @@ export const AuthProvider = ({ children }) => {
       isAuthenticated: Boolean(auth.token),
       loginWithEmail,
       loginWithGoogle,
+      verifyOtp,
       logout: clearAuth,
       updateUser,
     }),
