@@ -29,7 +29,7 @@ const buildToken = (user) =>
       id: user._id,
       email: user.email,
       name: user.name,
-      role: user.role,
+      role: getRoleForEmail(user.email),
     },
     JWT_SECRET
   );
@@ -41,7 +41,7 @@ const buildAuthResponse = (user) => ({
     name: user.name,
     email: user.email,
     picture: user.picture,
-    role: user.role,
+    role: getRoleForEmail(user.email),
     fullname: user.fullname || "",
     age: user.age || null,
     country: user.country || "",
@@ -158,7 +158,7 @@ const me = async (req, res) => {
         name: user.name,
         email: user.email,
         picture: user.picture,
-        role: user.role,
+        role: getRoleForEmail(user.email),
         fullname: user.fullname || "",
         age: user.age || null,
         country: user.country || "",
@@ -195,7 +195,7 @@ const updateProfile = async (req, res) => {
         name: user.name,
         email: user.email,
         picture: user.picture,
-        role: user.role,
+        role: getRoleForEmail(user.email),
         fullname: user.fullname,
         age: user.age,
         country: user.country,
@@ -252,7 +252,7 @@ const deleteAccount = async (req, res) => {
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
-    if (user.role === "admin") {
+    if (getRoleForEmail(user.email) === "admin") {
       return res.status(403).json({ message: "Administrators cannot delete their accounts" });
     }
 
