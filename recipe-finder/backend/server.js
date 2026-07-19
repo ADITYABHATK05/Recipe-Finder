@@ -16,7 +16,7 @@ app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ limit: "10mb", extended: true }));
 
 // Health check
-app.get("/", (req, res) => {
+app.get(["/", "/healthz"], (req, res) => {
   res.json({ message: "Recipe Finder API is running" });
 });
 
