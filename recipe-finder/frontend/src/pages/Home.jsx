@@ -196,6 +196,13 @@ const Home = () => {
   const [activeCuisine, setActiveCuisine] = useState("All");
   const [showAllCuisines, setShowAllCuisines] = useState(false);
 
+  const urlSearch = searchParams.get("search") || "";
+
+  // Synchronize searchTerm state with URL search param changes
+  useEffect(() => {
+    setSearchTerm(urlSearch);
+  }, [urlSearch]);
+
   // Synchronize active cuisine state with URL search param
   useEffect(() => {
     const cuisineParam = searchParams.get("cuisine");
@@ -310,22 +317,8 @@ const Home = () => {
       )}
 
       {/* 3. Search and Filters */}
-      <div className="filters-section" style={{ display: "flex", flexDirection: "column", gap: "20px", marginBottom: "28px" }}>
-        <div style={{ display: "flex", gap: "16px", width: "100%", flexWrap: "wrap", alignItems: "center" }}>
-          <div className="search-wrapper">
-            <input
-              type="text"
-              className="search-input-field"
-              placeholder="Search dishes from around the world..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-            <svg className="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="11" cy="11" r="8"></circle>
-              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-            </svg>
-          </div>
-          
+      <div className="filters-section" style={{ display: "flex", flexDirection: "column", gap: "12px", marginBottom: "28px" }}>
+        <div style={{ display: "flex", gap: "16px", width: "100%", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
             <select
               className="filter-select-field"
@@ -354,6 +347,23 @@ const Home = () => {
             </select>
           </div>
         </div>
+
+        {searchTerm.trim() && (
+          <div style={{ display: "flex", alignItems: "center", gap: "10px", color: "var(--muted)", fontSize: "0.95rem" }}>
+            <span>Showing results for "<strong>{searchTerm}</strong>"</span>
+            <button
+              onClick={() => {
+                const newParams = new URLSearchParams(searchParams);
+                newParams.delete("search");
+                setSearchParams(newParams);
+              }}
+              className="btn btn-secondary"
+              style={{ padding: "6px 12px", borderRadius: "10px", fontSize: "0.8rem", cursor: "pointer", display: "inline-flex", alignItems: "center", height: "auto" }}
+            >
+              Clear Search
+            </button>
+          </div>
+        )}
 
         {/* 4. Cuisine Selection Cards */}
         <div className="cuisine-selector-wrapper">

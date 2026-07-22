@@ -1,10 +1,41 @@
-import { NavLink } from "react-router-dom";
-import { useNavigate } from "react-router-dom";
+import { NavLink, useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { useState, useEffect } from "react";
 
 const Navbar = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, logout } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Read search term from URL query parameter
+  const searchParam = searchParams.get("search") || "";
+  const [navSearch, setNavSearch] = useState(searchParam);
+
+  // Synchronize local search input with URL search param changes
+  useEffect(() => {
+    setNavSearch(searchParam);
+  }, [searchParam]);
+
+  const handleSearchChange = (e) => {
+    const val = e.target.value;
+    setNavSearch(val);
+
+    // Update query parameter
+    const newParams = new URLSearchParams(searchParams);
+    if (val.trim()) {
+      newParams.set("search", val);
+    } else {
+      newParams.delete("search");
+    }
+
+    // If they aren't on the Home page, navigate to Home with query params
+    if (location.pathname !== "/app") {
+      navigate(`/app?${newParams.toString()}`);
+    } else {
+      setSearchParams(newParams);
+    }
+  };
 
   const handleLogout = () => {
     logout();
@@ -22,6 +53,32 @@ const Navbar = () => {
           </svg>
           <span>Recipe Finder</span>
         </NavLink>
+
+        <div className="navbar-search" style={{ flex: 1, maxWidth: "450px", margin: "0 24px" }}>
+          <div className="search-wrapper" style={{ minWidth: "auto" }}>
+            <input
+              type="text"
+              className="search-input-field"
+              style={{
+                padding: "10px 16px 10px 42px",
+                borderRadius: "12px",
+                fontSize: "0.9rem",
+                background: "#ffffff",
+                border: "2px solid rgba(193, 68, 14, 0.35)",
+                boxShadow: "0 2px 8px rgba(193, 68, 14, 0.08)",
+                transition: "all 0.2s ease"
+              }}
+              placeholder="Search dishes from around the world..."
+              value={navSearch}
+              onChange={handleSearchChange}
+            />
+            <svg className="search-icon" style={{ left: "14px", width: "16px", height: "16px", color: "var(--accent)" }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+          </div>
+        </div>
+
         <div className="nav-links">
           <NavLink to="/app" end className={({ isActive }) => (isActive ? "active" : "")}> 
             Home
