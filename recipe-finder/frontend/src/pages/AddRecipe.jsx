@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api";
 
@@ -22,6 +22,7 @@ const CUISINES_LIST = [
 
 const AddRecipe = () => {
   const navigate = useNavigate();
+  const fileInputRef = useRef(null);
   const [form, setForm] = useState({
     name: "",
     image: "",
@@ -43,6 +44,7 @@ const AddRecipe = () => {
     const reader = new FileReader();
     reader.onloadend = () => {
       handleChange("image", reader.result);
+      e.target.value = "";
     };
     reader.readAsDataURL(file);
   };
@@ -209,6 +211,7 @@ const AddRecipe = () => {
             <div className="form-group" style={{ margin: 0 }}>
               <input
                 id="file-upload"
+                ref={fileInputRef}
                 type="file"
                 accept="image/*"
                 onChange={handleImageFileChange}
@@ -216,11 +219,18 @@ const AddRecipe = () => {
               />
               {form.image ? (
                 <div className="uploaded-preview-container">
-                  <img src={form.image} alt="Preview" />
+                  <label htmlFor="file-upload" style={{ display: "block" }}>
+                    <img src={form.image} alt="Preview" />
+                  </label>
                   <button
                     type="button"
                     className="remove-image-btn"
-                    onClick={() => handleChange("image", "")}
+                    onClick={() => {
+                      handleChange("image", "");
+                      if (fileInputRef.current) {
+                        fileInputRef.current.value = "";
+                      }
+                    }}
                     title="Remove image"
                   >
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">

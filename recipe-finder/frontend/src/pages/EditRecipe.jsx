@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import api from "../api";
 
@@ -22,6 +22,7 @@ const CUISINES_LIST = [
 const EditRecipe = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const fileInputRef = useRef(null);
 
   const [form, setForm] = useState({
     name: "",
@@ -45,6 +46,7 @@ const EditRecipe = () => {
     const reader = new FileReader();
     reader.onloadend = () => {
       handleChange("image", reader.result);
+      e.target.value = "";
     };
     reader.readAsDataURL(file);
   };
@@ -253,6 +255,7 @@ const EditRecipe = () => {
             <div className="form-group" style={{ margin: 0 }}>
               <input
                 id="file-upload-edit"
+                ref={fileInputRef}
                 type="file"
                 accept="image/*"
                 onChange={handleImageFileChange}
@@ -260,11 +263,18 @@ const EditRecipe = () => {
               />
               {form.image ? (
                 <div className="uploaded-preview-container">
-                  <img src={form.image} alt="Preview" />
+                  <label htmlFor="file-upload-edit" style={{ display: "block" }}>
+                    <img src={form.image} alt="Preview" />
+                  </label>
                   <button
                     type="button"
                     className="remove-image-btn"
-                    onClick={() => handleChange("image", "")}
+                    onClick={() => {
+                      handleChange("image", "");
+                      if (fileInputRef.current) {
+                        fileInputRef.current.value = "";
+                      }
+                    }}
                     title="Remove image"
                   >
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
