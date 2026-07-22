@@ -295,7 +295,7 @@ const Home = () => {
 
       {/* 2. Featured Recipe Highlights Banner */}
       {!loading && !error && recipes.length > 0 && (
-        <div className="featured-banner glass-card" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0", borderRadius: "20px", overflow: "hidden", marginBottom: "36px", background: "rgba(255,255,255,0.4)" }}>
+        <div className="featured-banner-grid glass-card">
           <img 
             src="https://images.unsplash.com/photo-1604068549290-dea0e4a305ca?auto=format&fit=crop&w=900&q=80" 
             alt="Classic Margherita Pizza"

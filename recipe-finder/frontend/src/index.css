@@ -2128,3 +2128,101 @@ a {
   animation: speakingPulse 1.2s ease infinite;
   color: var(--danger) !important;
 }
+
+.navbar-search {
+  margin: 0 24px;
+}
+
+/* Mobile Responsiveness & Layout Overhaul */
+
+.featured-banner-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 0;
+  border-radius: 20px;
+  overflow: hidden;
+  margin-bottom: 36px;
+  background: rgba(255, 255, 255, 0.4);
+  box-shadow: var(--shadow);
+  border: 1px solid rgba(255, 255, 255, 0.45);
+}
+
+@media (max-width: 768px) {
+  .featured-banner-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .featured-banner-grid img {
+    height: 180px !important;
+  }
+  
+  .featured-banner-grid > div {
+    padding: 20px !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .navbar-inner {
+    flex-direction: column;
+    align-items: stretch !important;
+    padding: 12px 16px !important;
+    gap: 12px !important;
+  }
+  
+  .navbar-search {
+    width: 100% !important;
+    margin: 4px 0 !important;
+    max-width: none !important;
+    order: 2;
+  }
+  
+  .nav-links {
+    width: 100% !important;
+    justify-content: space-between !important;
+    margin-top: 4px;
+    order: 3;
+    gap: 10px !important;
+  }
+  
+  .nav-links a {
+    font-size: 0.85rem;
+  }
+  
+  .btn-sm {
+    padding: 6px 12px !important;
+    font-size: 0.8rem !important;
+  }
+}
+
+@media (max-width: 580px) {
+  .home-hero {
+    padding: 20px !important;
+    border-radius: 16px !important;
+    margin-top: 16px !important;
+    margin-bottom: 24px !important;
+  }
+  
+  .home-hero h1 {
+    font-size: 1.6rem !important;
+  }
+  
+  .home-hero p {
+    font-size: 0.95rem !important;
+  }
+}
+
+/* Responsive Tables for Admin Dashboard */
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  margin-top: 16px;
+}
+
+.table-responsive table {
+  margin-top: 0 !important;
+  width: 100%;
+  min-width: 600px;
+}

@@ -54,7 +54,7 @@ const Navbar = () => {
           <span>Recipe Finder</span>
         </NavLink>
 
-        <div className="navbar-search" style={{ flex: 1, maxWidth: "450px", margin: "0 24px" }}>
+        <div className="navbar-search" style={{ flex: 1, maxWidth: "450px" }}>
           <div className="search-wrapper" style={{ minWidth: "auto" }}>
             <input
               type="text"
